@@ -69,6 +69,8 @@ export default class Game extends cc.Component {
 
     @property(cc.Node)
     private qipan: cc.Node = null!; // 棋盘图片
+    @property(cc.Node)
+    private gift: cc.Node = null!; // 礼物图片
 
     // 棋盘尺寸 8x8
     public ROW: number = 3;
@@ -391,6 +393,22 @@ export default class Game extends cc.Component {
             item.removeFromParent();
             item.destroy();
         }
+        this.gift.getChildByName("tong").active = LevelType.tong.toString() == this.Level;
+        this.gift.getChildByName("deng").active = LevelType.deng.toString() == this.Level;
+        this.gift.getChildByName("chuang").active = LevelType.chuang.toString() == this.Level;
+        //停止倒计时
+        this.stopCountdown();
+        
+        this.gift.on(cc.Node.EventType.TOUCH_END, () => {
+            cc.director.loadScene("Main");
+        })
+
+        
+        
+        // await this.waitTime(0.2);
+        // await this.dropDownItems(); // 方块下落
+        // await this.fillEmpty();    // 填充新方块
+        // await this.waitTime(0.1);
         return Promise.resolve();
     }
 
@@ -425,6 +443,55 @@ export default class Game extends cc.Component {
             }
         }
         return matched;
+    }
+
+    // 8. 方块下落（暂未实现）
+    async dropDownItems() {
+        for (let j = 0; j < this.COL; j++) {
+            for (let i = this.ROW - 1; i >= 0; i--) {
+                if (!this.grides[i][j].isValid) {
+                    // 寻找上方有值的方块
+                    for (let k = i - 1; k >= 0; k--) {
+                        if (this.grides[k][j].isValid) {
+                            this.grides[i][j] = this.grides[k][j];
+                            this.grides[i][j].setPosition(this.getPosByIndex(i, j));
+                            this.grides[k][j] = new cc.Node();
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        await this.waitTime(0.3);
+    }
+
+    // 7. 顶部填充新方块（暂未实现）
+    async fillEmpty() {
+        for (let j = 0; j < this.COL; j++) {
+            for (let i = 0; i < this.ROW; i++) {
+                if (!this.grides[i][j].isValid) {
+                    let item = cc.instantiate(this.itemPrefab);
+                    item.parent = this.board;
+                    item.setPosition(this.getPosByIndex(i, j));
+                    let randomType = Math.floor(Math.random() * 4) + 1;
+                    await this.setItemType(i, j, randomType);
+                    this.grides[i][j] = item;
+                }
+            }
+        }
+        await this.waitTime(0.1);
+    }
+
+    getPosByIndex(i: number, j: number): cc.Vec3 {
+        return new cc.Vec3(
+            (j - this.COL / 2) * this.cellSize + this.cellSize / 2,
+            (this.ROW / 2 - i) * this.cellSize - this.cellSize / 2,
+            0
+        );
+    }
+
+    waitTime(sec: number): Promise<void> {
+        return new Promise(resolve => setTimeout(resolve, sec * 1000));
     }
 
 
