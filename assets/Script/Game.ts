@@ -58,18 +58,44 @@ export default class Game extends cc.Component {
     @property(cc.Prefab)
     itemPrefab: cc.Prefab = null!; // 方块预制体
 
+    @property(cc.ProgressBar)
+    timeProgressBar: cc.ProgressBar = null!; // 倒计时进度条
 
+    @property(Number)
+    private timeLeft: number = 10; // 初始倒计时时间（秒）
+
+    @property(cc.Node)
+    private Bg: cc.Node = null!; // 场景背景图片
+
+    @property(cc.Node)
+    private qipan: cc.Node = null!; // 棋盘图片
 
     // 棋盘尺寸 8x8
     public ROW: number = 3;
     public COL: number = 3;//横数
     public distance: number = 14;//方块间距
     public cellSize: number = 160;//方块大小
-    public background: cc.Sprite = null!;//背景图片
+
+    // public background: cc.Sprite = null!;//场景背景图片
+
+    // public qipan: cc.Sprite = null!;//棋盘图片
+
+    public isGameEnd: boolean = false;//是否游戏结束
+
+
 
     public isSwapping: boolean = false;//是否交换中
 
     public selectedNode: cc.Node = null!;//当前选中的方块
+
+    public DestroyItem:cc.Node[] = [];//要消除的方块数组
+
+    private grides: cc.Node[][] = [];//所有方块的节点数组
+
+    // 倒计时相关
+
+    private countdownTimer: number = 0; // 倒计时定时器
+
 
     /**
      * 关卡名称
@@ -84,14 +110,16 @@ export default class Game extends cc.Component {
     }
 
 
-    private grides: cc.Node[][] = [];//所有方块的节点数组
-
+   
 
 
     start() {
+        // 初始化单例
+        Game.instance = this;
+        
         this.Level = LevelType.tong.toString();
         // this.Level = LevelType.chuang.toString();
-        let dir = levelTypeDict[this.Level];
+        this.changpPic(this.Level);
         // let pic=cc.loader.loadRes("qipan" + "/" + dir + '/' + "wp" + "_" + dir + "_" + 1, cc.SpriteFrame);
 
 
@@ -103,7 +131,61 @@ export default class Game extends cc.Component {
             this.board.setPosition(cc.v2(this.board.position.x, this.board.position.y));
         }
 
+        // 初始化倒计时
+        this.initCountdown();
+        
         this.initBoard();
+    }
+
+    changpPic(level: string){
+        switch (level) {
+            case LevelType.chuang.toString():
+                this.Bg.getChildByName('bg_chuang').active = true;
+                this.qipan.getChildByName('chuang').active = true;
+                break;
+            case LevelType.deng.toString():
+                this.Bg.getChildByName('bg_deng').active = true;
+                this.qipan.getChildByName('deng').active = true;
+                break;
+            case LevelType.tong.toString():
+                this.Bg.getChildByName('bg_tong').active = true;
+                this.qipan.getChildByName('tong').active = true;
+                break;
+        }
+    }
+
+    // 初始化倒计时
+    initCountdown() {
+        this.updateTimeLabel();
+        // 启动倒计时定时器
+        this.countdownTimer = setInterval(() => {
+            this.timeLeft = this.timeLeft - 0.1;
+            this.updateTimeLabel();
+            
+            if (this.timeLeft <= 0) {
+                this.onTimeUp();
+            }
+        }, 100);
+    }
+
+    // 更新倒计时标签
+    updateTimeLabel() {
+        if (this.timeProgressBar) {
+            this.timeProgressBar.progress = this.timeLeft / 10;
+        }
+    }
+
+    // 时间到处理
+    onTimeUp() {
+        clearInterval(this.countdownTimer);
+        console.log("时间到！游戏结束");
+        //
+        // 这里可以添加游戏结束逻辑
+    }
+
+    // 停止倒计时
+    stopCountdown() {
+        clearInterval(this.countdownTimer);
     }
 
 
@@ -132,13 +214,61 @@ export default class Game extends cc.Component {
         // 等待所有图片加载完成
         await Promise.all(loadPromises);
 
-        if (this.checkAllMatches()) {
-            console.log("有可消除方块 重新生成");
+        // 检查是否有可消除方块
+        const hasMatches = this.checkAllMatches();
+        if (hasMatches) {
+            console.log("有可消除方块的可能性，消除三连");
             // 清除所有方块
             this.board.removeAllChildren();
             this.grides = [];
             await this.initBoard();
+        } else {
+            // 检查是否存在可消除的可能性
+            if (!this.hasPossibleMatches()) {
+                console.log("无可能消除的方块 重新生成");
+                // 清除所有方块
+                this.board.removeAllChildren();
+                this.grides = [];
+                await this.initBoard();
+            }
         }
+    }
+
+    // 检测是否存在可消除的可能性
+    hasPossibleMatches(): boolean {
+        // 遍历所有相邻的方块对
+        for (let i = 0; i < this.ROW; i++) {
+            for (let j = 0; j < this.COL; j++) {
+                // 尝试与右侧方块交换
+                if (j < this.COL - 1) {
+                    // 交换方块
+                    [this.grides[i][j], this.grides[i][j + 1]] = [this.grides[i][j + 1], this.grides[i][j]];
+                    // 检查交换后是否有三连
+                    if (this.checkAllMatches()) {
+                        // 恢复交换
+                        [this.grides[i][j], this.grides[i][j + 1]] = [this.grides[i][j + 1], this.grides[i][j]];
+                        return true;
+                    }
+                    // 恢复交换
+                    [this.grides[i][j], this.grides[i][j + 1]] = [this.grides[i][j + 1], this.grides[i][j]];
+                }
+                
+                // 尝试与下方方块交换
+                if (i < this.ROW - 1) {
+                    // 交换方块
+                    [this.grides[i][j], this.grides[i + 1][j]] = [this.grides[i + 1][j], this.grides[i][j]];
+                    // 检查交换后是否有三连
+                    if (this.checkAllMatches()) {
+                        // 恢复交换
+                        [this.grides[i][j], this.grides[i + 1][j]] = [this.grides[i + 1][j], this.grides[i][j]];
+                        return true;
+                    }
+                    // 恢复交换
+                    [this.grides[i][j], this.grides[i + 1][j]] = [this.grides[i + 1][j], this.grides[i][j]];
+                }
+            }
+        }
+        return false;
     }
 
     async setItemType(x: number, y: number, type: number): Promise<void> {
@@ -206,63 +336,102 @@ export default class Game extends cc.Component {
     }
 
     async swapItem(a: cc.Node, b: cc.Node) {
-        this.isSwapping = true;
-        let tempPos = a.position.clone();
-        a.setPosition(b.position);
-        b.setPosition(tempPos);
+        return new Promise<void>((resolve) => {
+            this.isSwapping = true;
+            let tempPos = a.position.clone();
+            let aPos = a.position;
+            let bPos = b.position;
 
-        // 更新数组索引
-        let aIdx = this.getIndexByNode(a);
-        let bIdx = this.getIndexByNode(b);
-        [this.grides[aIdx.i][aIdx.j], this.grides[bIdx.i][bIdx.j]] =
-            [this.grides[bIdx.i][bIdx.j], this.grides[aIdx.i][aIdx.j]];
+            // 使用动作系统交换位置
+            cc.tween(a)
+                .to(0.3, { position: bPos }, { easing: 'quadOut' })
+                .start();
+            
+            cc.tween(b)
+                .to(0.3, { position: aPos }, { easing: 'quadOut' })
+                .call(() => {
+                    // 动画完成后更新数组索引
+                    let aIdx = this.getIndexByNode(a);
+                    let bIdx = this.getIndexByNode(b);
+                    [this.grides[aIdx.i][aIdx.j], this.grides[bIdx.i][bIdx.j]] = 
+                        [this.grides[bIdx.i][bIdx.j], this.grides[aIdx.i][aIdx.j]];
 
-        // 检查是否形成三连
-        let hasMatch = this.checkAllMatches();
-        if (!hasMatch) {
-            // 无三连，交换回去
-            console.log("无三连，交换回去")
-            b.setPosition(a.position);
-            a.setPosition(tempPos);
+                    // 检查是否形成三连
+                    let hasMatch = this.checkAllMatches();
+                    if (!hasMatch) {
+                        // 无三连，交换回去
+                        console.log("无三连，交换回去");
+                        
+                        cc.tween(a)
+                            .to(0.3, { position: aPos }, { easing: 'quadOut' })
+                            .start();
+                        
+                        cc.tween(b)
+                            .to(0.3, { position: bPos }, { easing: 'quadOut' })
+                            .call(() => {
+                                // 动画完成后恢复数组索引
+                                [this.grides[aIdx.i][aIdx.j], this.grides[bIdx.i][bIdx.j]] = 
+                                    [this.grides[bIdx.i][bIdx.j], this.grides[aIdx.i][aIdx.j]];
+                                
+                                this.isSwapping = false;
+                                resolve();
+                            })
+                            .start();
+                    } else {
+                        // 有三连，执行消除
+                        this.destroyMatches().then(() => {
+                            this.isSwapping = false;
+                            resolve();
+                        });
+                    }
+                })
+                .start();
+        });
+    }
 
-            [this.grides[aIdx.i][aIdx.j], this.grides[bIdx.i][bIdx.j]] =
-                [this.grides[bIdx.i][bIdx.j], this.grides[aIdx.i][aIdx.j]];
-        } else {
-            // 有三连，执行消除
-            await this.destroyMatches();
+    async destroyMatches(): Promise<void> {
+        console.log("有三连，执行消除三连");
+        // 这里可以添加消除动画和逻辑
+         for (let item of this.DestroyItem) {
+            item.removeFromParent();
+            item.destroy();
         }
-
-        this.isSwapping = false;
+        return Promise.resolve();
     }
 
-    destroyMatches() {
-        console.log("有三连，执行消除三连")
-    }
 
+/*
+    * 检查交换后是否有三连
+**/
     checkAllMatches(): boolean {
+        // 清空要消除的方块数组
+        this.DestroyItem = [];
         let matched = false;
         for (let i = 0; i < this.ROW; i++) {
             for (let j = 0; j < this.COL; j++) {
                 let type = this.getItemType(this.grides[i][j]);
-                console.log("type", type, i, j)
+                // console.log("type", type, i, j)
                 // 横向三连
                 if (j < this.COL - 2 &&
                     type === this.getItemType(this.grides[i][j + 1]) &&
                     type === this.getItemType(this.grides[i][j + 2])) {
                     console.log("type", type, "横向三连", i, j)
+                    this.DestroyItem.push(this.grides[i][j], this.grides[i][j + 1], this.grides[i][j + 2]);
                     matched = true;
                 }
                 // 纵向三连
                 if (i < this.ROW - 2 &&
                     type === this.getItemType(this.grides[i + 1][j]) &&
                     type === this.getItemType(this.grides[i + 2][j])) {
-                    console.log("type", type, "纵向三连", i, j)
+                    // console.log("type", type, "纵向三连", i, j)
+                    this.DestroyItem.push(this.grides[i][j], this.grides[i + 1][j], this.grides[i + 2][j]);
                     matched = true;
                 }
             }
         }
         return matched;
     }
+
 
     getItemType(node: cc.Node): number {
         return Number(node.getChildByName('icon').getComponent(cc.Sprite).spriteFrame.name.split('_').slice(-1));
