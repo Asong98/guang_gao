@@ -88,7 +88,7 @@ export default class Game extends cc.Component {
 
     public selectedNode: cc.Node = null!;//当前选中的方块
 
-    public DestroyItem:cc.Node[] = [];//要消除的方块数组
+    public DestroyItem: cc.Node[] = [];//要消除的方块数组
 
     private grides: cc.Node[][] = [];//所有方块的节点数组
 
@@ -110,21 +110,21 @@ export default class Game extends cc.Component {
     }
 
 
-   
+
 
 
     start() {
         // 初始化单例
         Game.instance = this;
-        
-        this.Level = LevelType.tong.toString();
+
+        this.Level = LevelType.deng.toString();
         // this.Level = LevelType.chuang.toString();
         this.changpPic(this.Level);
         // let pic=cc.loader.loadRes("qipan" + "/" + dir + '/' + "wp" + "_" + dir + "_" + 1, cc.SpriteFrame);
 
 
         // this.background = this.node.getChildByName('background').getComponent(cc.Sprite);
-        if(this.Level == LevelType.tong.toString()){
+        if (this.Level == LevelType.tong.toString()) {
             this.ROW = 3;
             this.COL = 4;
             this.distance = 16;
@@ -133,25 +133,20 @@ export default class Game extends cc.Component {
 
         // 初始化倒计时
         this.initCountdown();
-        
+        // 初始化棋盘
         this.initBoard();
     }
 
-    changpPic(level: string){
-        switch (level) {
-            case LevelType.chuang.toString():
-                this.Bg.getChildByName('bg_chuang').active = true;
-                this.qipan.getChildByName('chuang').active = true;
-                break;
-            case LevelType.deng.toString():
-                this.Bg.getChildByName('bg_deng').active = true;
-                this.qipan.getChildByName('deng').active = true;
-                break;
-            case LevelType.tong.toString():
-                this.Bg.getChildByName('bg_tong').active = true;
-                this.qipan.getChildByName('tong').active = true;
-                break;
-        }
+    changpPic(level: string) {
+
+        this.Bg.getChildByName('bg_chuang').active = LevelType.chuang.toString() == level;
+        this.Bg.getChildByName('bg_deng').active = LevelType.deng.toString() == level;
+        this.Bg.getChildByName('bg_tong').active = LevelType.tong.toString() == level;
+
+        this.qipan.getChildByName('chuang').active = LevelType.chuang.toString() == level;
+        this.qipan.getChildByName('deng').active = LevelType.deng.toString() == level;
+        this.qipan.getChildByName('tong').active = LevelType.tong.toString() == level;
+
     }
 
     // 初始化倒计时
@@ -161,7 +156,7 @@ export default class Game extends cc.Component {
         this.countdownTimer = setInterval(() => {
             this.timeLeft = this.timeLeft - 0.1;
             this.updateTimeLabel();
-            
+
             if (this.timeLeft <= 0) {
                 this.onTimeUp();
             }
@@ -252,7 +247,7 @@ export default class Game extends cc.Component {
                     // 恢复交换
                     [this.grides[i][j], this.grides[i][j + 1]] = [this.grides[i][j + 1], this.grides[i][j]];
                 }
-                
+
                 // 尝试与下方方块交换
                 if (i < this.ROW - 1) {
                     // 交换方块
@@ -346,14 +341,14 @@ export default class Game extends cc.Component {
             cc.tween(a)
                 .to(0.3, { position: bPos }, { easing: 'quadOut' })
                 .start();
-            
+
             cc.tween(b)
                 .to(0.3, { position: aPos }, { easing: 'quadOut' })
                 .call(() => {
                     // 动画完成后更新数组索引
                     let aIdx = this.getIndexByNode(a);
                     let bIdx = this.getIndexByNode(b);
-                    [this.grides[aIdx.i][aIdx.j], this.grides[bIdx.i][bIdx.j]] = 
+                    [this.grides[aIdx.i][aIdx.j], this.grides[bIdx.i][bIdx.j]] =
                         [this.grides[bIdx.i][bIdx.j], this.grides[aIdx.i][aIdx.j]];
 
                     // 检查是否形成三连
@@ -361,18 +356,18 @@ export default class Game extends cc.Component {
                     if (!hasMatch) {
                         // 无三连，交换回去
                         console.log("无三连，交换回去");
-                        
+
                         cc.tween(a)
                             .to(0.3, { position: aPos }, { easing: 'quadOut' })
                             .start();
-                        
+
                         cc.tween(b)
                             .to(0.3, { position: bPos }, { easing: 'quadOut' })
                             .call(() => {
                                 // 动画完成后恢复数组索引
-                                [this.grides[aIdx.i][aIdx.j], this.grides[bIdx.i][bIdx.j]] = 
+                                [this.grides[aIdx.i][aIdx.j], this.grides[bIdx.i][bIdx.j]] =
                                     [this.grides[bIdx.i][bIdx.j], this.grides[aIdx.i][aIdx.j]];
-                                
+
                                 this.isSwapping = false;
                                 resolve();
                             })
@@ -392,7 +387,7 @@ export default class Game extends cc.Component {
     async destroyMatches(): Promise<void> {
         console.log("有三连，执行消除三连");
         // 这里可以添加消除动画和逻辑
-         for (let item of this.DestroyItem) {
+        for (let item of this.DestroyItem) {
             item.removeFromParent();
             item.destroy();
         }
@@ -400,9 +395,9 @@ export default class Game extends cc.Component {
     }
 
 
-/*
-    * 检查交换后是否有三连
-**/
+    /*
+        * 检查交换后是否有三连
+    **/
     checkAllMatches(): boolean {
         // 清空要消除的方块数组
         this.DestroyItem = [];
