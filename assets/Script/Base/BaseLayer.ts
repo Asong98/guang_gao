@@ -56,9 +56,10 @@ export default class BaseLayer extends BaseComponent {
         }
         LayerManger.Instance.AddResizeCallback(this._resizeFunc);
     }
-    protected onDestroy() {
-        LayerManger.Instance.RemoveResizeCallback(this._resizeFunc);
-    }
+
+    // protected onDestroy() {
+    //     LayerManger.Instance.RemoveResizeCallback(this._resizeFunc);
+    // }
 
     protected onResize() {
         let stageW = LayerManger.Instance.GetStageW();

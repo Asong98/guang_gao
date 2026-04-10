@@ -390,6 +390,10 @@ export default class Game extends cc.Component {
         console.log("有三连，执行消除三连");
         // 这里可以添加消除动画和逻辑
         for (let item of this.DestroyItem) {
+            if (this.getItemType(item) == 1) {
+                //需要先完成填充逻辑，再消除
+                continue;
+            }
             item.removeFromParent();
             item.destroy();
         }
@@ -398,7 +402,7 @@ export default class Game extends cc.Component {
         this.gift.getChildByName("chuang").active = LevelType.chuang.toString() == this.Level;
         //停止倒计时
         this.stopCountdown();
-        
+
         this.gift.on(cc.Node.EventType.TOUCH_END, () => {
             cc.director.loadScene("Main");
         })
@@ -447,11 +451,11 @@ export default class Game extends cc.Component {
 
     // 8. 方块下落（暂未实现）
     async dropDownItems() {
-        for (let j = 0; j < this.COL; j++) {
-            for (let i = this.ROW - 1; i >= 0; i--) {
+        for (let i = 0; i < this.ROW; i++) {
+            for (let j = this.COL - 1; j >= 0; j--) {
                 if (!this.grides[i][j].isValid) {
                     // 寻找上方有值的方块
-                    for (let k = i - 1; k >= 0; k--) {
+                    for (let k = j - 1; k >= 0; k--) {
                         if (this.grides[k][j].isValid) {
                             this.grides[i][j] = this.grides[k][j];
                             this.grides[i][j].setPosition(this.getPosByIndex(i, j));
@@ -473,6 +477,7 @@ export default class Game extends cc.Component {
                     let item = cc.instantiate(this.itemPrefab);
                     item.parent = this.board;
                     item.setPosition(this.getPosByIndex(i, j));
+                    console.log("填充新方块", i, j)
                     let randomType = Math.floor(Math.random() * 4) + 1;
                     await this.setItemType(i, j, randomType);
                     this.grides[i][j] = item;

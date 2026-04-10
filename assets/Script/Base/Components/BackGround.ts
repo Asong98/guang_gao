@@ -34,9 +34,10 @@ export default class BackGround extends BaseComponent {
         }
         LayerManger.Instance.AddResizeCallback(this._resizeFunc);
     }
-    protected onDestroy() {
-        LayerManger.Instance.RemoveResizeCallback(this._resizeFunc);
-    }
+
+    // protected onDestroy() {
+    //     LayerManger.Instance.RemoveResizeCallback(this._resizeFunc);
+    // }
 
     protected onResize() {
         switch (this.Adaption) {
