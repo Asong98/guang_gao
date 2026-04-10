@@ -1,0 +1,13 @@
+
+chaunghu.png
+size: 448,468
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+or2/fe
+  rotate: false
+  xy: 0, 0
+  size: 445, 467
+  orig: 453, 467
+  offset: 8, 0
+  index: -1
