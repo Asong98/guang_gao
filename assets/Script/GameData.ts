@@ -7,8 +7,24 @@
 
 const {ccclass, property} = cc._decorator;
 
+export enum LevelType {
+    chuang = "1",
+    deng = "2",
+    tong = "3",
+}
+
 @ccclass
 export default class GameData extends cc.Component {
+
+    // 单例模式
+    private static _instance: GameData = null!;
+    public static getInstance() {
+        if (this._instance == null) {
+            this._instance = new GameData();
+        }
+        return this._instance;
+    }
+
 
     private level :string =null!;
     set Level(value: string) {
@@ -18,18 +34,33 @@ export default class GameData extends cc.Component {
         return this.level;
     }
 
-    onLoad () {
-        // 常驻节点 , 不随场景切换而销毁
-        cc.game.addPersistRootNode(this.node);  
+    //已通关的关卡
+    private finishLevelType: LevelType[] = [LevelType.tong];
+    public getFinishLevelType() {
+        return this.finishLevelType;
+    }
+    public setFinishLevelType(value: LevelType) {
+        this.finishLevelType.push(value);
     }
 
-    start () {
-
+    //当前关卡(字符串)
+    private currentLevelType: string = '';
+    public getCurrentLevelType() {
+        return this.currentLevelType;
+    }
+    public setCurrentLevelType(value: string) {
+        this.currentLevelType = value;
     }
 
-    public changeScene() {
-        cc.director.loadScene("game");
-    }
 
-    // update (dt) {}
+    // onLoad () {
+    //     // 常驻节点 , 不随场景切换而销毁
+    //     cc.game.addPersistRootNode(this.node);  
+    //     // 预加载所有资源
+    //     cc.director.preloadScene("Main");
+    //     cc.director.preloadScene("game");
+    // }
+
+
+
 }

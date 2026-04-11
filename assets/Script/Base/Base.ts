@@ -13,39 +13,39 @@ export default class Base extends cc.Component {
 
     constructor() {
         super()
-        Base.instance = this
+        // Base.instance = this
     }
 
-    onLoad() {
+    // onLoad() {
 
-        this.ready = true
+    //     this.ready = true
 
-        this.getComponentsInChildren(BaseComponent).forEach((component) => {
-            for (let key in component) {
-                const value = component[key]
-                if (value instanceof FindArgs) {
-                    component[key] = find(value.name, value.parent)
-                }
-                else if (value instanceof FindParentArgs) {
-                    component[key] = findComponentInParents(value.target, value.type)
-                }
-            }
-        })
+    //     this.getComponentsInChildren(BaseComponent).forEach((component) => {
+    //         for (let key in component) {
+    //             const value = component[key]
+    //             if (value instanceof FindArgs) {
+    //                 component[key] = find(value.name, value.parent)
+    //             }
+    //             else if (value instanceof FindParentArgs) {
+    //                 component[key] = findComponentInParents(value.target, value.type)
+    //             }
+    //         }
+    //     })
 
 
-        this.initFrameAnimes()
+    //     this.initFrameAnimes()
 
-        window['__coolplay_base'] = this
+    //     window['__coolplay_base'] = this
 
-        try{
-            const baseLoadedEvent = document.createEvent('UIEvent')
-            baseLoadedEvent.initEvent('__coolplay_base:loaded', true, true)
-            document.dispatchEvent(baseLoadedEvent)
-        }catch(e){
+    //     try{
+    //         const baseLoadedEvent = document.createEvent('UIEvent')
+    //         baseLoadedEvent.initEvent('__coolplay_base:loaded', true, true)
+    //         document.dispatchEvent(baseLoadedEvent)
+    //     }catch(e){
             
-        }
+    //     }
        
-    }
+    // }
 
     
 
