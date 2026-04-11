@@ -18,7 +18,7 @@
             ],
             "height": 978,
             "type": "panel",
-            "width": 267
+            "width": 262
           },
           {
             "children": [
@@ -29,7 +29,7 @@
                 ],
                 "height": 695,
                 "type": "panel",
-                "width": 979
+                "width": 984
               },
               {
                 "active": 1,
@@ -40,12 +40,12 @@
                 ],
                 "height": 280,
                 "type": "panel",
-                "width": 979
+                "width": 984
               }
             ],
             "height": 978,
             "type": "dock-v",
-            "width": 979
+            "width": 984
           },
           {
             "active": 0,

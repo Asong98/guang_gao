@@ -23,6 +23,9 @@ export default class AudioManager extends cc.Component {
     canPlayAudio = false
 
     static instance: AudioManager = null
+    public static getInstance() {
+        return AudioManager.instance
+    }
 
 
     @property({

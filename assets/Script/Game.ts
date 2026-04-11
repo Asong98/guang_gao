@@ -5,7 +5,7 @@
 // Learn life-cycle callbacks:
 //  - https://docs.cocos.com/creator/manual/en/scripting/life-cycle-callbacks.html
 
-import GameData from "./GameData";
+import GameData, { LevelType, levelTypeDict } from "./GameData";
 
 const { ccclass, property } = cc._decorator;
 
@@ -26,16 +26,8 @@ const itemTypeDict = {
     [ItemType.Enemy]: 'Enemy',
 }
 
-enum LevelType {
-    chuang = 1,
-    deng = 2,
-    tong = 3,
-}
-const levelTypeDict = {
-    [LevelType.chuang]: 'chuang',
-    [LevelType.deng]: 'deng',
-    [LevelType.tong]: 'tong',
-}
+
+
 
 
 
@@ -102,7 +94,7 @@ export default class Game extends cc.Component {
     /**
      * 关卡名称
      */
-    private Level: string = null!;//当前关卡(数字)
+    private Level: LevelType = null!;//当前关卡(数字)
 
     onLoad() {
         // this.Level = GameData.getInstance().getCurrentLevelType();
@@ -118,10 +110,11 @@ export default class Game extends cc.Component {
         // 初始化单例
         // Game.instance = this;
 
-        let str = GameData.getInstance().getCurrentLevelType();
+        this.Level = GameData.getInstance().getCurrentLevelType();
         
-
-        this.Level = str;
+        console.log("当前关卡：***********"+this.Level);
+        
+        // this.Level = this.Level;
         this.changpPic(this.Level);
         // let pic=cc.loader.loadRes("qipan" + "/" + dir + '/' + "wp" + "_" + dir + "_" + 1, cc.SpriteFrame);
 
@@ -189,7 +182,7 @@ export default class Game extends cc.Component {
 
 
 
-
+    // 初始化棋盘
     async initBoard() {
         this.board.removeAllChildren();
         const loadPromises: Promise<void>[] = [];
@@ -272,7 +265,7 @@ export default class Game extends cc.Component {
 
     async setItemType(x: number, y: number, type: number): Promise<void> {
         return new Promise((resolve, reject) => {
-            let dir = levelTypeDict[this.Level];
+            let dir = levelTypeDict[this.Level].toString();
             if (!dir) {
                 resolve();
                 return;
@@ -405,7 +398,9 @@ export default class Game extends cc.Component {
         this.gift.getChildByName("deng").active = LevelType.deng.toString() == this.Level;
         this.gift.getChildByName("chuang").active = LevelType.chuang.toString() == this.Level;
         this.gift.getChildByName("background").active = true;
-
+        
+        GameData.getInstance().addStep();
+        GameData.getInstance().setFinishLevelType(this.Level);
         //停止倒计时
         this.stopCountdown();
 

@@ -13,6 +13,12 @@ export enum LevelType {
     tong = "3",
 }
 
+export const levelTypeDict = {
+    [LevelType.chuang]: 'chuang',
+    [LevelType.deng]: 'deng',
+    [LevelType.tong]: 'tong',
+}
+
 @ccclass
 export default class GameData extends cc.Component {
 
@@ -35,7 +41,7 @@ export default class GameData extends cc.Component {
     }
 
     //已通关的关卡
-    private finishLevelType: LevelType[] = [LevelType.tong];
+    private finishLevelType: LevelType[] = [];
     public getFinishLevelType() {
         return this.finishLevelType;
     }
@@ -44,12 +50,20 @@ export default class GameData extends cc.Component {
     }
 
     //当前关卡(字符串)
-    private currentLevelType: string = '';
+    private currentLevelType: LevelType = null!;
     public getCurrentLevelType() {
         return this.currentLevelType;
     }
-    public setCurrentLevelType(value: string) {
+    public setCurrentLevelType(value: LevelType) {
         this.currentLevelType = value;
+    }
+
+    private step = 0;
+    public getStep() {
+        return this.step;
+    }
+    public addStep() {
+        this.step ++;
     }
 
 
