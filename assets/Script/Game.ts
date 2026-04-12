@@ -6,6 +6,7 @@
 //  - https://docs.cocos.com/creator/manual/en/scripting/life-cycle-callbacks.html
 
 import GameData, { LevelType, levelTypeDict } from "./GameData";
+import Audio from "./Audio";
 
 const { ccclass, property } = cc._decorator;
 
@@ -63,8 +64,12 @@ export default class Game extends cc.Component {
 
     @property(cc.Node)
     private qipan: cc.Node = null!; // 棋盘图片
+
     @property(cc.Node)
     private gift: cc.Node = null!; // 礼物图片
+
+    @property(cc.Node)
+    private faiil: cc.Node = null!; // 失败图片
 
     // 棋盘尺寸 8x8
     public ROW: number = 3;
@@ -87,8 +92,11 @@ export default class Game extends cc.Component {
     private grides: cc.Node[][] = [];//所有方块的节点数组
 
     // 倒计时相关
-
     private countdownTimer: number = 0; // 倒计时定时器
+
+    //危险时间
+    private dangerTime: number = 3;//危险时间（秒）
+    private isDanger: boolean = false;//危险时间定时器
 
 
     /**
@@ -102,6 +110,9 @@ export default class Game extends cc.Component {
         item.on(cc.Node.EventType.TOUCH_END, () => {
             cc.director.loadScene("Main");
         })
+        this.faiil.on(cc.Node.EventType.TOUCH_END, () => {
+            cc.director.loadScene("Main");
+        })
     }
 
 
@@ -111,9 +122,9 @@ export default class Game extends cc.Component {
         // Game.instance = this;
 
         this.Level = GameData.getInstance().getCurrentLevelType();
-        
-        console.log("当前关卡：***********"+this.Level);
-        
+
+        console.log("当前关卡：***********" + this.Level);
+
         // this.Level = this.Level;
         this.changpPic(this.Level);
         // let pic=cc.loader.loadRes("qipan" + "/" + dir + '/' + "wp" + "_" + dir + "_" + 1, cc.SpriteFrame);
@@ -152,7 +163,12 @@ export default class Game extends cc.Component {
         this.countdownTimer = setInterval(() => {
             this.timeLeft = this.timeLeft - 0.1;
             this.updateTimeLabel();
+            // 危险时间
+            if (this.timeLeft == this.dangerTime) {
+                this.isDanger = true;
 
+
+            }
             if (this.timeLeft <= 0) {
                 this.onTimeUp();
             }
@@ -169,9 +185,12 @@ export default class Game extends cc.Component {
     // 时间到处理
     onTimeUp() {
         clearInterval(this.countdownTimer);
+        Audio.getInstance().playSFX("倒计时")
         console.log("时间到！游戏结束");
         //
         // 这里可以添加游戏结束逻辑
+        this.faiil.active = true
+        // this.gift.active = false
     }
 
     // 停止倒计时
@@ -333,7 +352,7 @@ export default class Game extends cc.Component {
             let tempPos = a.position.clone();
             let aPos = a.position;
             let bPos = b.position;
-
+            Audio.getInstance().playSFX("嗖")
             // 使用动作系统交换位置
             cc.tween(a)
                 .to(0.3, { position: bPos }, { easing: 'quadOut' })
@@ -353,6 +372,7 @@ export default class Game extends cc.Component {
                     if (!hasMatch) {
                         // 无三连，交换回去
                         console.log("无三连，交换回去");
+                        Audio.getInstance().playSFX("错误")
 
                         cc.tween(a)
                             .to(0.3, { position: aPos }, { easing: 'quadOut' })
@@ -371,6 +391,7 @@ export default class Game extends cc.Component {
                             .start();
                     } else {
                         // 有三连，执行消除
+
                         this.destroyMatches().then(() => {
                             this.isSwapping = false;
                             resolve();
@@ -394,11 +415,12 @@ export default class Game extends cc.Component {
             item.destroy();
         }
 
+        Audio.getInstance().playSFX("合成")
         this.gift.getChildByName("tong").active = LevelType.tong.toString() == this.Level;
         this.gift.getChildByName("deng").active = LevelType.deng.toString() == this.Level;
         this.gift.getChildByName("chuang").active = LevelType.chuang.toString() == this.Level;
         this.gift.getChildByName("background").active = true;
-        
+
         GameData.getInstance().addStep();
         GameData.getInstance().setFinishLevelType(this.Level);
         //停止倒计时

@@ -5,10 +5,10 @@
       "main": true,
       "url": "app://editor/index.html",
       "windowType": "dockable",
-      "x": -8,
-      "y": -8,
-      "width": 1936,
-      "height": 1096,
+      "x": 0,
+      "y": 0,
+      "width": 1920,
+      "height": 1080,
       "layout": {
         "children": [
           {
@@ -16,9 +16,9 @@
             "children": [
               "assets"
             ],
-            "height": 978,
+            "height": 962,
             "type": "panel",
-            "width": 262
+            "width": 260
           },
           {
             "children": [
@@ -27,9 +27,9 @@
                 "children": [
                   "scene"
                 ],
-                "height": 695,
+                "height": 684,
                 "type": "panel",
-                "width": 984
+                "width": 975.984375
               },
               {
                 "active": 1,
@@ -38,23 +38,23 @@
                   "timeline",
                   "game-window"
                 ],
-                "height": 280,
+                "height": 275,
                 "type": "panel",
-                "width": 984
+                "width": 975.984375
               }
             ],
-            "height": 978,
+            "height": 962,
             "type": "dock-v",
-            "width": 984
+            "width": 975.984375
           },
           {
             "active": 0,
             "children": [
               "hierarchy"
             ],
-            "height": 978,
+            "height": 962,
             "type": "panel",
-            "width": 267
+            "width": 264
           },
           {
             "active": 0,
@@ -62,25 +62,25 @@
               "inspector",
               "cocos-services"
             ],
-            "height": 978,
+            "height": 962,
             "type": "panel",
-            "width": 398
+            "width": 395
           }
         ],
         "type": "dock-h"
       },
       "panels": [
-        "hierarchy",
         "assets",
         "scene",
         "console",
         "timeline",
         "game-window",
+        "hierarchy",
         "inspector",
         "cocos-services"
       ]
     },
-    "worker": {}
+    "window-1775980386335": {}
   },
   "panels": {
     "builder": {

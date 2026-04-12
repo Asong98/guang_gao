@@ -1,203 +1,121 @@
 const { ccclass, property } = cc._decorator;
 
+
 @ccclass
 export default class Audio extends cc.Component {
-    private static instance: Audio = null!;
+    public bgmVolume: number = 1;
+    public sfxVolume: number = 1;
 
-    @property([cc.AudioClip])
-    bgmClips: cc.AudioClip[] = [];
+    bgmAudioID: number = -1;
+    audioId: number = -1;
 
-    @property([cc.AudioClip])
-    sfxClips: cc.AudioClip[] = [];
 
-    private bgmId: number = -1;
-    private bgmVolume: number = 1.0;
-    private sfxVolume: number = 1.0;
-    private currentBgm: string = "";
-    private __isBgmMuted: boolean = false;
-    private __isSfxMuted: boolean = false;
-
-    public static getInstance(): Audio {
-        if (!this.instance) {
-            this.instance = new Audio();
+    private static instance: Audio = null
+    public static getInstance() {
+        if (!Audio.instance) {
+            Audio.instance = new Audio()
         }
-        return this.instance;
+        return Audio.instance
     }
 
-    onLoad() {
-        if (Audio.instance) {
-            // this.node.destroy();
-            return;
-        }
-        Audio.instance = this;
-        cc.game.addPersistRootNode(this.node);
-        this.loadVolumeSettings();
+    async loadSounds() {
+        var t = cc.sys.localStorage.getItem("bgmVolume");
+        var t1 = cc.sys.localStorage.getItem("sfxVolume");
+
+        this.bgmVolume = t == 0 ? Number(t) : 1;
+        this.sfxVolume = t1 == 0 ? Number(t1) : 1;
+        return new Promise<void>((resolve, reject) => {
+            cc.loader.loadResDir("sounds", () => {
+                console.log("loadSounds success")
+                resolve();
+            },() => {
+                    console.log("loadSounds error")
+                    resolve();
+                }) 
+        })
+
     }
 
-    private loadVolumeSettings() {
-        const bgmVol = cc.sys.localStorage.getItem("bgmVolume");
-        const sfxVol = cc.sys.localStorage.getItem("sfxVolume");
-        const bgmMuted = cc.sys.localStorage.getItem("bgmMuted");
-        const sfxMuted = cc.sys.localStorage.getItem("sfxMuted");
-
-        if (bgmVol !== null) this.bgmVolume = parseFloat(bgmVol);
-        if (sfxVol !== null) this.sfxVolume = parseFloat(sfxVol);
-        if (bgmMuted !== null) this.__isBgmMuted = bgmMuted === "true";
-        if (sfxMuted !== null) this.__isSfxMuted = sfxMuted === "true"; 
+    getUrl(url: string): cc.AudioClip {
+        return cc.loader.getRes("sounds/" + url);
     }
 
-    private saveVolumeSettings() {
-        cc.sys.localStorage.setItem("bgmVolume", this.bgmVolume.toString());
-        cc.sys.localStorage.setItem("sfxVolume", this.sfxVolume.toString());
-        cc.sys.localStorage.setItem("bgmMuted", this.isBgmMuted.toString());
-        cc.sys.localStorage.setItem("sfxMuted", this.isSfxMuted.toString());
-    }
-
-    playBgm(clipName: string, loop: boolean = true) {
-        if (this.isBgmMuted) return;
-
-        const clip = this.getBgmClipByName(clipName);
-        if (!clip) {
-            console.warn(`BGM clip not found: ${clipName}`);
-            return;
+    private bgm_url: string = ""
+    playBGM(url: string) {
+        this.bgm_url = url;
+        var audioUrl = this.getUrl(url);
+        if (this.bgmAudioID >= 0) {
+            cc.audioEngine.stop(this.bgmAudioID);
         }
-
-        if (this.currentBgm === clipName && this.bgmId !== -1) {
-            return;
-        }
-
-        if (this.bgmId !== -1) {
-            cc.audioEngine.stop(this.bgmId);
-        }
-
-        this.bgmId = cc.audioEngine.play(clip, loop, this.bgmVolume);
-        this.currentBgm = clipName;
-    }
-
-    stopBgm() {
-        if (this.bgmId !== -1) {
-            cc.audioEngine.stop(this.bgmId);
-            this.bgmId = -1;
-            this.currentBgm = "";
+        if (this.bgmVolume > 0) {
+            this.bgmAudioID = cc.audioEngine.play(audioUrl, true, this.bgmVolume);
         }
     }
 
-    pauseBgm() {
-        if (this.bgmId !== -1) {
-            cc.audioEngine.pause(this.bgmId);
+    stopSFX(audioId: number) {
+        var ok = cc.audioEngine.stop(audioId);
+        return ok;
+    }
+
+    private lastplaysfxtime = {};
+    private sfxcd = {
+        "ui_button_click_1": 300,
+        "cash_register_1_1": 500,
+        "cash_register_2_1": 500,
+        "cash_register_3_1": 500,
+        "cash_register_4_1": 500
+    }
+
+    playSFX(url: string) {
+        if (!this.lastplaysfxtime[url])
+            this.lastplaysfxtime[url] = 0;
+
+        var audioUrl = this.getUrl(url);
+        if (this.sfxVolume > 0) {
+            this.audioId = cc.audioEngine.play(audioUrl, false, this.sfxVolume);
+            return this.audioId;
         }
     }
 
-    resumeBgm() {
-        if (this.bgmId !== -1) {
-            cc.audioEngine.resume(this.bgmId);
+    pauseBGM() {
+        if (this.bgmAudioID >= 0) {
+            cc.audioEngine.pause(this.bgmAudioID);
+            // cc.log("暂停bgm")
         }
     }
 
-    playSfx(clipName: string, volumeScale: number = 1.0): number {
-        if (this.isSfxMuted) return -1;
-
-        const clip = this.getSfxClipByName(clipName);
-        if (!clip) {
-            console.warn(`SFX clip not found: ${clipName}`);
-            return -1;
-        }
-
-        const finalVolume = this.sfxVolume * volumeScale;
-        return cc.audioEngine.play(clip, false, finalVolume);
-    }
-
-    stopSfx(audioId: number) {
-        if (audioId !== -1) {
-            cc.audioEngine.stop(audioId);
+    resumBGM() {
+        if (this.bgmAudioID >= 0) {
+            cc.audioEngine.resume(this.bgmAudioID);
+            // cc.log("恢复bgm")
         }
     }
 
-    stopAllSfx() {
-        cc.audioEngine.stopAllEffects();
-    }
-
-    setBgmVolume(volume: number) {
-        this.bgmVolume = Math.max(0, Math.min(1, volume));
-        if (this.bgmId !== -1) {
-            cc.audioEngine.setVolume(this.bgmId, this.bgmVolume);
+    setBGMVolume(v: number, force: boolean = false) {
+        if (this.bgmVolume != v || force) {
+            cc.sys.localStorage.setItem("bgmVolume", v);
+            this.bgmVolume = v;
+            cc.audioEngine.setVolume(this.bgmAudioID, v);
         }
-        this.saveVolumeSettings();
-    }
-
-    getBgmVolume(): number {
-        return this.bgmVolume;
-    }
-
-    setSfxVolume(volume: number) {
-        this.sfxVolume = Math.max(0, Math.min(1, volume));
-        this.saveVolumeSettings();
-    }
-
-    getSfxVolume(): number {
-        return this.sfxVolume;
-    }
-
-    muteBgm(mute: boolean) {
-        this.__isBgmMuted = mute;
-        if (mute) {
-            this.pauseBgm();
+        if (this.bgmAudioID >= 0) {
+            if (v > 0) {
+                cc.audioEngine.resume(this.bgmAudioID);
+            } else {
+                cc.audioEngine.pause(this.bgmAudioID);
+            }
         } else {
-            this.resumeBgm();
+            this.playBGM(this.bgm_url);
         }
-        this.saveVolumeSettings();
     }
 
-    isBgmMuted(): boolean {
-        return this.__isBgmMuted;
-    }
-
-    muteSfx(mute: boolean) {
-        this.__isSfxMuted = mute;
-        if (mute) {
-            this.stopAllSfx();
+    setSFXVolume(v: number, force: boolean = false) {
+        if (this.sfxVolume != v || force) {
+            cc.sys.localStorage.setItem("sfxVolume", v);
+            this.sfxVolume = v;
+            //设置音效大小会同时设置背景音乐的声音，不设置音效大小，本地音效依然可以受控使用，暂未找到原因
+            // cc.audioEngine.setEffectsVolume(v);
         }
-        this.saveVolumeSettings();
-    }
-
-    isSfxMuted(): boolean {
-        return this.__isSfxMuted;
-    }
-
-    private getBgmClipByName(name: string): cc.AudioClip | null {
-        for (const clip of this.bgmClips) {
-            if (clip.name === name) {
-                return clip;
-            }
-        }
-        return null;
-    }
-
-    private getSfxClipByName(name: string): cc.AudioClip | null {
-        for (const clip of this.sfxClips) {
-            if (clip.name === name) {
-                return clip;
-            }
-        }
-        return null;
-    }
-
-    preloadAudioClips() {
-        this.bgmClips.forEach(clip => {
-            cc.audioEngine.preload(clip.name);
-        });
-        this.sfxClips.forEach(clip => {
-            cc.audioEngine.preload(clip.name);
-        });
-    }
-
-    stopAll() {
-        this.stopBgm();
-        this.stopAllSfx();
-    }
-
-    onDestroy() {
-        this.stopAll();
-        cc.audioEngine.uncacheAll();
     }
 }
+
+

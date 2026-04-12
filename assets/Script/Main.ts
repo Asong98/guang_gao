@@ -8,6 +8,7 @@
 import AudioManager from "./Base/Components/AudioManager";
 import GameData, { LevelType } from "./GameData";
 import PoolManager from "./PoolManger";
+import Audio from "./Audio";
 
 const { ccclass, property } = cc._decorator;
 
@@ -44,13 +45,20 @@ export default class MAin extends cc.Component {
     @property(cc.Node)
     xue: cc.Node = null;
 
+    @property(cc.Node)
+    shouzhi: cc.Node = null;
+
     @property(cc.Prefab)
     dianji: cc.Prefab = null;
 
     // LIFE-CYCLE CALLBACKS:
 
-    onLoad() {
+    async onLoad() {
         // 初始化游戏数据
+        await Audio.getInstance().loadSounds().then(() => {
+            Audio.getInstance().playBGM("bgm")
+        })
+
         let btn_names = ["btn_tong", "btn_chuang", "btn_deng"]
         btn_names.forEach((name) => {
             let btn: cc.Node = cc.find("Layer_1/" + name, this.node)
@@ -58,26 +66,26 @@ export default class MAin extends cc.Component {
                 btn.on(cc.Node.EventType.TOUCH_END, this.onClickBtn, this)
             }
         })
-        this.node.on(cc.Node.EventType.TOUCH_START, this.click, this) 
+        this.node.on(cc.Node.EventType.TOUCH_START, this.click, this)
         this.refresh()
         PoolManager.getInstance().initPool("dianji", this.dianji, 5, this.node)
-        
+
         // this.btn_tong.node.on(cc.Node.EventType.TOUCH_END, this.changeScene_tong, this)
         // this.btn_chuang.node.on(cc.Node.EventType.TOUCH_END, this.changeScene_chuang, this)
         // this.btn_deng.node.on(cc.Node.EventType.TOUCH_END, this.changeScene_deng, this) 
     }
 
     click(event: cc.Event.EventTouch) {
-        AudioManager.play("点击2")
-        
+        Audio.getInstance().playSFX("点击2")
+
         console.log("点击了屏幕");
         console.log("点击位置:", event.getLocation());
         let node = PoolManager.getInstance().getNode("dianji", this.dianji, this.node)
-        
+
         //将屏幕点击位置转换为节点位置的坐标系
-         const localPos = this.node.convertToNodeSpaceAR(event.getLocation());
+        const localPos = this.node.convertToNodeSpaceAR(event.getLocation());
         node.setPosition(localPos)
-        console.log("获取到的节点：" + node.name+"位置："+localPos);
+        console.log("获取到的节点：" + node.name + "位置：" + localPos);
         node.active = true
     }
 
@@ -90,22 +98,45 @@ export default class MAin extends cc.Component {
         this.btn_chuang.node.active = !GameData.getInstance().getFinishLevelType().includes(LevelType.chuang)
         this.btn_deng.node.active = !GameData.getInstance().getFinishLevelType().includes(LevelType.deng)
 
-        
-        this.jiantou.active = GameData.getInstance().getStep() < 3
-        if(this.jiantou.active){
+        let step = GameData.getInstance().getStep()
+
+        this.jiantou.active = step < 3
+        if (this.jiantou.active) {
             this.jiantou.setPosition(JIANTOU_POSITION[GameData.getInstance().getStep()])
         }
-        if (GameData.getInstance().getStep() == 2) {
+        if (step >= 2) {
+            this.schedule(() => {
+                Audio.getInstance().playSFX("燃烧")
+            }, 2)
+            Audio.getInstance().playSFX("燃烧")
+            Audio.getInstance().playSFX("呵呵")
             this.jiantou.scaleX = -1;
+
+        }
+        if (step == 1) {
+            // Audio.getInstance().playSFX("燃烧")
+        }
+        if (step >= 3) {
+            this.shouzhi.active = true
+        }
+        if (step == 0) {
+            Audio.getInstance().playSFX("风雪")
+            Audio.getInstance().playSFX("女颤抖")
+            this.schedule(() => {
+                Audio.getInstance().playSFX("风雪")
+            }, 2)
+            this.schedule(() => {
+                Audio.getInstance().playSFX("女颤抖")
+            }, 4)
+            // Audio.getInstance().playSFX("风雪")
         }
 
-        this.bg_1.active = GameData.getInstance().getStep() < 2
-        this.bg_2.active = GameData.getInstance().getStep() >= 2
-        this.fire.active = GameData.getInstance().getStep() >= 2
-        this.xue.active = GameData.getInstance().getStep() == 0
+        this.bg_1.active = step < 2
+        this.bg_2.active = step >= 2
+        this.fire.active = step >= 2
+        this.xue.active = step == 0
 
-        console.log("当前步骤：" + GameData.getInstance().getStep());
-
+        console.log("当前步骤：" + step);
 
 
 
@@ -115,7 +146,7 @@ export default class MAin extends cc.Component {
     }
 
     start() {
-
+        // Audio.getInstance().playBGM("bgm")
     }
 
     onClickBtn(event: cc.Event.EventTouch) {
@@ -126,6 +157,7 @@ export default class MAin extends cc.Component {
                 // this.changeScene_tong()
                 if (GameData.getInstance().getStep() == 0 || GameData.getInstance().getStep() == 3) {
                     GameData.getInstance().setCurrentLevelType(LevelType.chuang)
+                    Audio.getInstance().playSFX("点击提醒")
                     cc.director.loadScene("game");
                 }
                 break;
@@ -133,6 +165,7 @@ export default class MAin extends cc.Component {
                 // this.changeScene_chuang()
                 if (GameData.getInstance().getStep() == 1 || GameData.getInstance().getStep() == 3) {
                     GameData.getInstance().setCurrentLevelType(LevelType.deng)
+                    Audio.getInstance().playSFX("点击提醒")
                     cc.director.loadScene("game");
                 }
                 break;
@@ -140,6 +173,7 @@ export default class MAin extends cc.Component {
                 // this.changeScene_deng()
                 if (GameData.getInstance().getStep() == 2 || GameData.getInstance().getStep() == 3) {
                     GameData.getInstance().setCurrentLevelType(LevelType.tong)
+                    Audio.getInstance().playSFX("点击提醒")
                     cc.director.loadScene("game");
                 }
                 break;
